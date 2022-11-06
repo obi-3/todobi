@@ -3,7 +3,7 @@ use chrono::{Duration, NaiveDate};
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct TodoBuilder {
     title: String,
     pub date: NaiveDate,
@@ -32,10 +32,10 @@ impl TodoBuilder {
         self.date += Duration::days(days.into());
         self
     }
-    // pub fn ymd<Y: Into<i32>, D: Into<u32>>(mut self, year: Y, month: D, day: D) -> Self {
-    //     self.date = NaiveDate::from_ymd(year.into(), month.into(), day.into());
-    //     self
-    // }
+    pub fn set_date(mut self, date: NaiveDate) -> Self {
+        self.date = date;
+        self
+    }
     pub fn desc<I: Into<String>>(mut self, desc: I) -> Self {
         self.desc = desc.into();
         self
@@ -48,10 +48,24 @@ impl TodoBuilder {
         self.done
     }
     pub fn to_string(&self) -> String {
-        format!("{}|{}|{}", self.title, self.desc, self.date)
+        format!(
+            "{:2}d | {:15} | {:20} | {:5} ",
+            self.get_days(),
+            self.title,
+            self.desc,
+            &self.date.to_string()[5..].replace("-", "/")
+        )
+    }
+    fn get_days(&self) -> i64 {
+        let today = Local::now().naive_local().date();
+        (self.date - today).num_days()
     }
 }
-
+impl PartialOrd for TodoBuilder {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.date.partial_cmp(&other.date)
+    }
+}
 impl Ord for TodoBuilder {
     fn cmp(&self, other: &Self) -> Ordering {
         self.date.cmp(&other.date)

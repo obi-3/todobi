@@ -3,12 +3,6 @@ use crate::todo;
 use anyhow;
 use console::{Key, Term};
 
-pub fn display_menu() -> anyhow::Result<()> {
-    let mut menu = Menu::new(Term::stdout());
-    menu.select()?;
-    Ok(())
-}
-
 #[derive(Debug, PartialEq)]
 enum MenuKind {
     Todo,
@@ -20,26 +14,13 @@ enum MenuKind {
 pub struct Menu {
     term: Term,
     menu: MenuKind,
-    todos: Vec<todo::TodoBuilder>,
+    pub todos: Vec<todo::TodoBuilder>,
     cursor: usize,
     curr_lines: usize,
 }
 
 impl Menu {
-    pub fn new(term: Term) -> Self {
-        let todo1 = todo::TodoBuilder::new()
-            .title("test1")
-            .desc("desc1")
-            .days(0);
-        let todo2 = todo::TodoBuilder::new()
-            .title("test2")
-            .desc("desc2")
-            .days(1);
-        let todo3 = todo::TodoBuilder::new()
-            .title("test3")
-            .desc("desc3")
-            .days(2);
-        let todos = vec![todo1, todo2, todo3];
+    pub fn new(term: Term, todos: Vec<todo::TodoBuilder>) -> Self {
         let cursor = 1;
         Self {
             term,
@@ -54,7 +35,6 @@ impl Menu {
         self.term.hide_cursor()?;
         loop {
             self.print_todos()?;
-            // self.term.flush()?;
             let is_noline = self.curr_lines == 0;
             match (is_noline, self.term.read_key()?) {
                 (_, Key::Escape | Key::Char('q')) => {
@@ -66,6 +46,7 @@ impl Menu {
                     let todo = input_todo(&self.term)?;
                     self.todos.push(todo);
                     self.todos.sort();
+                    continue;
                 }
                 (_, Key::ArrowLeft | Key::Char('l')) => {
                     self.next_menu();
