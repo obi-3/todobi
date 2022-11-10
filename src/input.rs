@@ -32,7 +32,6 @@ pub fn input_todo(term: &Term) -> anyhow::Result<todo::TodoBuilder> {
     todo = todo.desc(desc);
 
     term.clear_last_lines(4)?;
-    term.hide_cursor()?;
     Ok(todo)
 }
 

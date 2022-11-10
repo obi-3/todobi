@@ -44,6 +44,7 @@ impl Menu {
                 (_, Key::Char('a')) => {
                     self.clear()?;
                     let todo = input_todo(&self.term)?;
+                    self.term.hide_cursor()?;
                     self.todos.push(todo);
                     self.todos.sort();
                     continue;
