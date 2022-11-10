@@ -21,12 +21,11 @@ pub struct Menu {
 
 impl Menu {
     pub fn new(term: Term, todos: Vec<todo::TodoBuilder>) -> Self {
-        let cursor = 1;
         Self {
             term,
             menu: MenuKind::Todo,
             todos,
-            cursor,
+            cursor: 1,
             curr_lines: 0,
         }
     }
@@ -113,9 +112,8 @@ impl Menu {
         self.term.write_line(&title)?;
         self.curr_lines = 0;
         for todo in self.todos.iter() {
-            match (&self.menu, todo.is_done()) {
-                (MenuKind::Todo, false) | (MenuKind::Done, true) | (MenuKind::All, _) => {}
-                _ => continue,
+            if !is_displayed_todo(&self.menu, &todo) {
+                continue;
             }
             self.curr_lines += 1;
             let indicator = if self.cursor == self.curr_lines {
@@ -143,18 +141,22 @@ impl Menu {
             .clone()
             .into_iter()
             .map(|todo| {
-                match (&self.menu, todo.is_done()) {
-                    (MenuKind::Todo, false) | (MenuKind::Done, true) | (MenuKind::All, _) => {
-                        cnt += 1;
-                        if cnt == self.cursor {
-                            return todo.toggle();
-                        }
+                if is_displayed_todo(&self.menu, &todo) {
+                    cnt += 1;
+                    if cnt == self.cursor {
+                        return todo.toggle();
                     }
-                    _ => {}
                 }
                 todo
             })
             .collect();
         self.todos = todos;
     }
+}
+
+fn is_displayed_todo(menu_kind: &MenuKind, todo: &todo::TodoBuilder) -> bool {
+    matches!(
+        (menu_kind, todo.is_done()),
+        (MenuKind::Todo, false) | (MenuKind::Done, true) | (MenuKind::All, _)
+    )
 }
