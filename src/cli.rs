@@ -10,17 +10,17 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Add a todo
+    /// Add todo
     Add {
         #[arg(short, long, value_name = "FILE")]
         file: Option<PathBuf>,
     },
-    /// Clear all todos which are done
+    /// Clear all todo which are done
     Clear {
         #[arg(short, long, value_name = "FILE")]
         file: Option<PathBuf>,
     },
-    /// Show all todos
+    /// Show all todo
     Show {
         #[arg(short, long, value_name = "FILE")]
         file: Option<PathBuf>,
