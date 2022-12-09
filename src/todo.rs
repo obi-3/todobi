@@ -5,23 +5,21 @@ use std::cmp::Ordering;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct TodoBuilder {
-    title: String,
+    content: String,
     pub date: NaiveDate,
-    desc: String,
     done: bool,
 }
 
 impl TodoBuilder {
     pub fn new() -> Self {
         Self {
-            title: String::new(),
+            content: String::new(),
             date: Local::now().naive_local().date(),
-            desc: String::new(),
             done: false,
         }
     }
-    pub fn title<I: Into<String>>(mut self, title: I) -> Self {
-        self.title = title.into();
+    pub fn content<I: Into<String>>(mut self, title: I) -> Self {
+        self.content = title.into();
         self
     }
     pub fn weeks<I: Into<i64>>(mut self, weeks: I) -> Self {
@@ -36,10 +34,6 @@ impl TodoBuilder {
         self.date = date;
         self
     }
-    pub fn desc<I: Into<String>>(mut self, desc: I) -> Self {
-        self.desc = desc.into();
-        self
-    }
     pub fn toggle(mut self) -> Self {
         self.done = !self.done;
         self
@@ -49,10 +43,9 @@ impl TodoBuilder {
     }
     pub fn to_string(&self) -> String {
         format!(
-            "{:2}d | {:15} | {:20} | {:5} ",
+            "{:2}d | {:50} | {:5} ",
             self.get_days(),
-            self.title,
-            self.desc,
+            self.content,
             &self.date.to_string()[5..].replace("-", "/")
         )
     }

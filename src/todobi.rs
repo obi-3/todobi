@@ -38,7 +38,7 @@ impl Todobi {
     }
 
     pub fn add_todo(&mut self) -> anyhow::Result<()> {
-        let todo = input::input_todo(&console::Term::stdout())?;
+        let todo = input::input_todo(&console::Term::stdout(), None, None)?;
         self.todos.push(todo);
         self.todos.sort();
         Ok(())

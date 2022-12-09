@@ -1,5 +1,4 @@
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -12,17 +11,13 @@ pub struct Cli {
 pub enum Commands {
     /// Add todo
     Add {
-        #[arg(short, long, value_name = "FILE")]
-        file: Option<PathBuf>,
+        #[arg(short, long)]
+        content: Option<String>,
+        #[arg(short, long)]
+        date: Option<String>,
     },
     /// Clear all todo which are done
-    Clear {
-        #[arg(short, long, value_name = "FILE")]
-        file: Option<PathBuf>,
-    },
+    Clear,
     /// Show all todo
-    Show {
-        #[arg(short, long, value_name = "FILE")]
-        file: Option<PathBuf>,
-    },
+    Show,
 }

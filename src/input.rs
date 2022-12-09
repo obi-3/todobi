@@ -4,34 +4,32 @@ use chrono::NaiveDate;
 use console::Term;
 use dialoguer::Input;
 
-pub fn input_todo(term: &Term) -> anyhow::Result<todo::TodoBuilder> {
+pub fn input_todo(term: &Term, icontent: Option<String>, idate: Option<String>) -> anyhow::Result<todo::TodoBuilder> {
     term.write_line("Input todo information")?;
     term.show_cursor()?;
     let mut todo = todo::TodoBuilder::new();
 
-    let title: String = Input::new().with_prompt("title").interact_text()?;
-    todo = todo.title(title);
-
-    let date: String = Input::new()
-        .with_prompt("[]w[]d or %Y-%m-%d")
-        .allow_empty(true)
-        .interact_text()?;
-
-    match NaiveDate::parse_from_str(&date, "%Y-%m-%d") {
-        Ok(d) => todo = todo.set_date(d),
-        Err(_) => {
-            let (w, d) = parse_wd(date)?;
-            todo = todo.weeks(w).days(d);
+    let content = match icontent {
+        Some(c) => c,
+        None => {
+            let content: String = Input::new().with_prompt("title").interact_text()?;
+            content
         }
-    }
+    };
+    todo = todo.content(content);
 
-    let desc: String = Input::new()
-        .with_prompt("desc")
-        .allow_empty(true)
-        .interact_text()?;
-    todo = todo.desc(desc);
+    let date = match idate {
+        Some(d) => d,
+        None => {
+            Input::new()
+                .with_prompt("[]w[]d or %Y-%m-%d")
+                .allow_empty(true)
+                .interact_text()?
+        }
+    };
+    todo = todo.set_date(parse_date_input(date)?);
 
-    term.clear_last_lines(4)?;
+    // term.clear_last_lines(4)?;
     Ok(todo)
 }
 
@@ -70,4 +68,8 @@ fn parse_wd(wd: String) -> anyhow::Result<(u32, u32)> {
     }
 
     Ok((w, d))
+}
+
+fn parse_date_input(data: String) -> anyhow::Result<NaiveDate> {
+    todo!();
 }
