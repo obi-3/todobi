@@ -1,5 +1,5 @@
 use crate::todo;
-use anyhow;
+// use anyhow;
 use chrono::{NaiveDate, Duration};
 use chrono::prelude::*;
 use console::Term;
@@ -58,7 +58,7 @@ fn parse_date_input(date: String) -> anyhow::Result<NaiveDate> {
             format!("{}-{}-{}", year, month, day)
         };
 
-        return Ok(NaiveDate::parse_from_str(&date_str, "%Y-%m-%d")?)
+        Ok(NaiveDate::parse_from_str(&date_str, "%Y-%m-%d")?)
     } 
     // Parse <INT>w<INT>d
     else {
@@ -91,9 +91,8 @@ fn parse_date_input(date: String) -> anyhow::Result<NaiveDate> {
                 _ => return Err(anyhow::anyhow!(parse_error)),
             }
         }
-        return Ok(today +  Duration::weeks(w.into()) + Duration::days(d.into()));
-    };
-
+        Ok(today +  Duration::weeks(w.into()) + Duration::days(d.into()))
+    }
 }
 
 fn is_next_year_date(today: &NaiveDate, month: u32, day: u32) -> bool {

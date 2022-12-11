@@ -1,6 +1,6 @@
 use crate::input::input_todo;
 use crate::todo;
-use anyhow;
+// use anyhow;
 use console::{Key, Term};
 
 #[derive(Debug, PartialEq)]
@@ -16,7 +16,7 @@ pub struct Menu {
     menu: MenuKind,
     pub todos: Vec<todo::TodoBuilder>,
     cursor: usize,
-    curr_lines: usize,
+    line_count: usize,
 }
 
 impl Menu {
@@ -26,7 +26,7 @@ impl Menu {
             menu: MenuKind::Todo,
             todos,
             cursor: 1,
-            curr_lines: 0,
+            line_count: 0, // count of displayed lines
         }
     }
 
@@ -34,7 +34,7 @@ impl Menu {
         self.term.hide_cursor()?;
         loop {
             self.print_todos()?;
-            let is_noline = self.curr_lines == 0;
+            let is_noline = self.line_count == 0;
             match (is_noline, self.term.read_key()?) {
                 (_, Key::Escape | Key::Char('q')) => {
                     self.clear()?;
@@ -58,13 +58,13 @@ impl Menu {
                 }
                 (false, Key::ArrowUp | Key::BackTab | Key::Char('k')) => {
                     if self.cursor == 1 {
-                        self.cursor = self.curr_lines;
+                        self.cursor = self.line_count;
                     } else {
                         self.cursor -= 1;
                     }
                 }
                 (false, Key::ArrowDown | Key::Tab | Key::Char('j')) => {
-                    if self.cursor == self.curr_lines {
+                    if self.cursor == self.line_count {
                         self.cursor = 1;
                     } else {
                         self.cursor += 1;
@@ -72,7 +72,7 @@ impl Menu {
                 }
                 (false, Key::Enter) => {
                     self.toggle_todo();
-                    if self.menu != MenuKind::All && self.cursor == self.curr_lines {
+                    if self.menu != MenuKind::All && self.cursor == self.line_count {
                         self.cursor -= 1;
                     }
                 }
@@ -110,13 +110,13 @@ impl Menu {
         };
 
         self.term.write_line(&title)?;
-        self.curr_lines = 0;
+        self.line_count = 0;
         for todo in self.todos.iter() {
-            if !is_displayed_todo(&self.menu, &todo) {
+            if !is_displayed_todo(&self.menu, todo) {
                 continue;
             }
-            self.curr_lines += 1;
-            let indicator = if self.cursor == self.curr_lines {
+            self.line_count += 1;
+            let indicator = if self.cursor == self.line_count {
                 ">"
             } else {
                 " "
@@ -130,7 +130,8 @@ impl Menu {
     }
 
     fn clear(&mut self) -> anyhow::Result<()> {
-        self.term.clear_last_lines(self.curr_lines + 1)?;
+        let header = 1;
+        self.term.clear_last_lines(self.line_count + header)?;
         Ok(())
     }
 

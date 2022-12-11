@@ -59,8 +59,8 @@ impl Todobi {
     pub fn clear(&mut self) {
         let todos: Vec<todo::TodoBuilder> = self
             .todos
-            .to_owned()
-            .into_iter()
+            .iter()
+            .cloned()
             .filter(|todo| !todo.is_done())
             .collect();
         self.todos = todos;

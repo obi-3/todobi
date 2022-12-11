@@ -38,7 +38,7 @@ impl TodoBuilder {
             "{:2}d | {:50} | {:5} ",
             self.get_days(),
             self.content,
-            &self.date.to_string()[5..].replace("-", "/")
+            &self.date.to_string()[5..].replace('-', "/")
         )
     }
     fn get_days(&self) -> i64 {
