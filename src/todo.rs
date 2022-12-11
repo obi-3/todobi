@@ -1,5 +1,5 @@
 use chrono::prelude::*;
-use chrono::{Duration, NaiveDate};
+use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
@@ -20,14 +20,6 @@ impl TodoBuilder {
     }
     pub fn content<I: Into<String>>(mut self, title: I) -> Self {
         self.content = title.into();
-        self
-    }
-    pub fn weeks<I: Into<i64>>(mut self, weeks: I) -> Self {
-        self.date += Duration::weeks(weeks.into());
-        self
-    }
-    pub fn days<I: Into<i64>>(mut self, days: I) -> Self {
-        self.date += Duration::days(days.into());
         self
     }
     pub fn set_date(mut self, date: NaiveDate) -> Self {
@@ -54,6 +46,7 @@ impl TodoBuilder {
         (self.date - today).num_days()
     }
 }
+
 impl PartialOrd for TodoBuilder {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.date.partial_cmp(&other.date)

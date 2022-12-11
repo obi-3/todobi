@@ -10,6 +10,7 @@ mod todo;
 mod todobi;
 
 fn get_path_by_env() -> Result<PathBuf, anyhow::Error> {
+    //! Get todo-list directory by environments.
     let todo_dir = env::var("TODO_DIR").with_context(|| "Failed to read TODO_DIR.")?;
     let todo_dir = todo_dir
         .parse::<PathBuf>()
@@ -18,29 +19,33 @@ fn get_path_by_env() -> Result<PathBuf, anyhow::Error> {
     Ok(file_path)
 }
 
-fn main() -> anyhow::Result<()> {
+fn todobi() -> anyhow::Result<()> {
     let cli = cli::Cli::parse();
     let mut todos = todobi::Todobi::new();
+
+    let file_path = get_path_by_env()?;
+    todos.read(&file_path)?;
     match cli.command {
-        cli::Commands::Show => {
-            let file_path = get_path_by_env()?;
-            todos.read_todos(&file_path)?;
-            todos.display_menu()?;
-            todos.write_todos(&file_path)?;
+        cli::Commands::Edit => {
+            todos.edit()?;
         }
-        cli::Commands::Add { .. } => {
-            let file_path = get_path_by_env()?;
-            todos.read_todos(&file_path)?;
-            todos.add_todo()?;
-            todos.write_todos(&file_path)?;
+        cli::Commands::Add { content, date } => {
+            todos.add(content, date)?;
         }
         cli::Commands::Clear => {
-            let file_path = get_path_by_env()?;
-            todos.read_todos(&file_path)?;
-            todos.clear_dones();
-            todos.write_todos(&file_path)?;
+            todos.clear();
+        }
+        cli::Commands::Show => {
+            todos.show();
         }
     }
+    todos.write(&file_path)?;
 
     Ok(())
+}
+
+fn main(){
+    if let Err(e) = todobi() {
+        println!("{e}");
+    }
 }

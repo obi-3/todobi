@@ -4,6 +4,7 @@ use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::{BufReader, BufWriter};
 use std::path::PathBuf;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Todobi {
     pub todos: Vec<todo::TodoBuilder>,
@@ -14,13 +15,14 @@ impl Todobi {
         Self { todos: Vec::new() }
     }
 
-    pub fn read_todos(&mut self, file_path: &PathBuf) -> anyhow::Result<()> {
-        let todo_file = OpenOptions::new()
+    pub fn read(&mut self, file_path: &PathBuf) -> anyhow::Result<()> {
+        //! Read todo-list.
+        let todo_list = OpenOptions::new()
             .read(true)
             .write(true)
             .create(true)
             .open(file_path)?;
-        let reader = BufReader::new(todo_file);
+        let reader = BufReader::new(todo_list);
         let todos: Vec<todo::TodoBuilder> = match serde_json::from_reader(reader) {
             Ok(todos) => todos,
             Err(_) => Vec::new(),
@@ -29,22 +31,24 @@ impl Todobi {
         Ok(())
     }
 
-    pub fn write_todos(&self, file_path: &PathBuf) -> anyhow::Result<()> {
-        let todo_file = File::create(file_path)?;
-        let writer = BufWriter::new(todo_file);
+    pub fn write(&self, file_path: &PathBuf) -> anyhow::Result<()> {
+        //! Overwrite todo-list.
+        let todo_list = File::create(file_path)?;
+        let writer = BufWriter::new(todo_list);
         serde_json::to_writer_pretty(writer, &self.todos)?;
 
         Ok(())
     }
 
-    pub fn add_todo(&mut self) -> anyhow::Result<()> {
-        let todo = input::input_todo(&console::Term::stdout(), None, None)?;
+    pub fn add(&mut self, content: Option<String>, date: Option<String>) -> anyhow::Result<()> {
+        let todo = input::input_todo(&console::Term::stdout(), content, date)?;
+        println!("Add:[ {} ]", todo.to_string());
         self.todos.push(todo);
         self.todos.sort();
         Ok(())
     }
 
-    pub fn display_menu(&mut self) -> anyhow::Result<()> {
+    pub fn edit(&mut self) -> anyhow::Result<()> {
         self.todos.sort();
         let mut menu = menu::Menu::new(console::Term::stdout(), self.todos.to_owned());
         menu.select()?;
@@ -52,7 +56,7 @@ impl Todobi {
         Ok(())
     }
 
-    pub fn clear_dones(&mut self) {
+    pub fn clear(&mut self) {
         let todos: Vec<todo::TodoBuilder> = self
             .todos
             .to_owned()
@@ -60,5 +64,13 @@ impl Todobi {
             .filter(|todo| !todo.is_done())
             .collect();
         self.todos = todos;
+    }
+
+    pub fn show(&self) {
+        for todo in self.todos.iter() {
+            if !todo.is_done() {
+                println!("  {}", todo.to_string());
+            }
+        }
     }
 }

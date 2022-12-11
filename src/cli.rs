@@ -9,15 +9,15 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Add todo
+    /// Add task
     Add {
-        #[arg(short, long)]
         content: Option<String>,
-        #[arg(short, long)]
         date: Option<String>,
     },
-    /// Clear all todo which are done
+    /// Clear all tasks which are done
     Clear,
-    /// Show all todo
+    /// Edit todo-list
+    Edit,
+    /// Show all todo-list
     Show,
 }

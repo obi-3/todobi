@@ -1,18 +1,23 @@
 use crate::todo;
 use anyhow;
-use chrono::NaiveDate;
+use chrono::{NaiveDate, Duration};
+use chrono::prelude::*;
 use console::Term;
 use dialoguer::Input;
 
 pub fn input_todo(term: &Term, icontent: Option<String>, idate: Option<String>) -> anyhow::Result<todo::TodoBuilder> {
-    term.write_line("Input todo information")?;
+    let mut line_count = 0;
+    term.write_line("TODO:")?;
+    line_count += 1;
     term.show_cursor()?;
+
     let mut todo = todo::TodoBuilder::new();
 
     let content = match icontent {
         Some(c) => c,
         None => {
-            let content: String = Input::new().with_prompt("title").interact_text()?;
+            line_count += 1;
+            let content: String = Input::new().with_prompt("content").interact_text()?;
             content
         }
     };
@@ -21,55 +26,76 @@ pub fn input_todo(term: &Term, icontent: Option<String>, idate: Option<String>) 
     let date = match idate {
         Some(d) => d,
         None => {
+            line_count += 1;
             Input::new()
-                .with_prompt("[]w[]d or %Y-%m-%d")
+                .with_prompt("[INT]w[INT]d or MM/DD")
                 .allow_empty(true)
                 .interact_text()?
         }
     };
     todo = todo.set_date(parse_date_input(date)?);
 
-    // term.clear_last_lines(4)?;
+    term.clear_last_lines(line_count)?;
     Ok(todo)
 }
 
-fn parse_wd(wd: String) -> anyhow::Result<(u32, u32)> {
-    // [NUM]w [NUM]d
-    // w, d is only once
-    let (mut w_flag, mut d_flag) = (false, false);
-    let (mut w, mut d) = (0, 0);
-    let mut num_s = String::new();
-    let parse_error = "Only accept [INT]w [INT]d or %Y-%m-%d";
+fn parse_date_input(date: String) -> anyhow::Result<NaiveDate> {
+    let parse_error = "Only accept [INT]w[INT]d or MM/DD";
+    let today = Local::now().naive_local().date();
+    let year = today.year();
 
-    for c in wd.chars() {
-        match c {
-            c @ '0'..='9' => num_s.push(c),
-            'w' => {
-                if w_flag {
-                    return Err(anyhow::anyhow!(parse_error));
-                } else {
-                    w_flag = true;
-                    w = num_s.parse::<u32>()?;
-                    num_s = String::new();
+    // Parse MM/DD
+    if date.contains('/'){
+        let ary: Vec<&str> = date.split('/').collect();
+        if ary.len() != 2 { return Err(anyhow::anyhow!(parse_error)) }
+        let month: u32 = ary[0].parse()?;
+        let day: u32 = ary[1].parse()?;
+
+        let date_str = if is_next_year_date(&today, month, day) {
+            format!("{}-{}-{}", year+1, month, day)
+            
+        } else {
+            format!("{}-{}-{}", year, month, day)
+        };
+
+        return Ok(NaiveDate::parse_from_str(&date_str, "%Y-%m-%d")?)
+    } 
+    // Parse <INT>w<INT>d
+    else {
+        let (mut w_flag, mut d_flag) = (false, false);
+        let (mut w, mut d) = (0, 0);
+        let mut num_s = String::new();
+
+        for c in date.chars() {
+            match c {
+                c @ '0'..='9' => num_s.push(c),
+                'w' => {
+                    if w_flag {
+                        return Err(anyhow::anyhow!(parse_error));
+                    } else {
+                        w_flag = true;
+                        w = num_s.parse::<u32>()?;
+                        num_s = String::new();
+                    }
                 }
-            }
-            'd' => {
-                if d_flag {
-                    return Err(anyhow::anyhow!(parse_error));
-                } else {
-                    d_flag = true;
-                    d = num_s.parse::<u32>()?;
-                    num_s = String::new();
+                'd' => {
+                    if d_flag {
+                        return Err(anyhow::anyhow!(parse_error));
+                    } else {
+                        d_flag = true;
+                        d = num_s.parse::<u32>()?;
+                        num_s = String::new();
+                    }
                 }
+                ' ' => continue,
+                _ => return Err(anyhow::anyhow!(parse_error)),
             }
-            ' ' => continue,
-            _ => return Err(anyhow::anyhow!(parse_error)),
         }
-    }
+        return Ok(today +  Duration::weeks(w.into()) + Duration::days(d.into()));
+    };
 
-    Ok((w, d))
 }
 
-fn parse_date_input(data: String) -> anyhow::Result<NaiveDate> {
-    todo!();
+fn is_next_year_date(today: &NaiveDate, month: u32, day: u32) -> bool {
+    (month < today.month()) || (month == today.month() && day < today.day())
 }
