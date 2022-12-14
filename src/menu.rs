@@ -14,24 +14,27 @@ enum MenuKind {
 pub struct Menu {
     term: Term,
     menu: MenuKind,
-    pub todos: Vec<todo::TodoBuilder>,
+    pub todos: Vec<todo::Todo>,
     cursor: usize,
     line_count: usize,
+    max_content_len: usize,
 }
 
 impl Menu {
-    pub fn new(term: Term, todos: Vec<todo::TodoBuilder>) -> Self {
+    pub fn new(term: Term, todos: Vec<todo::Todo>) -> Self {
         Self {
             term,
             menu: MenuKind::Todo,
             todos,
             cursor: 1,
             line_count: 0, // count of displayed lines
+            max_content_len: 0,
         }
     }
 
     pub fn select(&mut self) -> anyhow::Result<()> {
         self.term.hide_cursor()?;
+        self.set_max_content_len();
         loop {
             self.print_todos()?;
             let is_noline = self.line_count == 0;
@@ -46,6 +49,7 @@ impl Menu {
                     self.term.hide_cursor()?;
                     self.todos.push(todo);
                     self.todos.sort();
+                    self.set_max_content_len();
                     continue;
                 }
                 (_, Key::ArrowLeft | Key::Char('l')) => {
@@ -82,6 +86,17 @@ impl Menu {
         }
         self.term.show_cursor()?;
         Ok(())
+    }
+
+    fn set_max_content_len(&mut self) {
+        let mut max = 0;
+        for todo in &self.todos {
+            let len = todo.get_content_len();
+            if len > max {
+                max = len;
+            }
+        }
+        self.max_content_len = max;
     }
 
     fn next_menu(&mut self) {
@@ -123,7 +138,13 @@ impl Menu {
             };
             let done_sign = if todo.is_done() { "x" } else { " " };
             self.term.write_line(
-                format!("{} [{}] {}", indicator, done_sign, todo.to_string()).as_str(),
+                format!(
+                    "{} [{}] {}",
+                    indicator,
+                    done_sign,
+                    todo.format(Some(self.max_content_len))
+                )
+                .as_str(),
             )?;
         }
         Ok(())
@@ -137,7 +158,7 @@ impl Menu {
 
     fn toggle_todo(&mut self) {
         let mut cnt = 0;
-        let todos: Vec<todo::TodoBuilder> = self
+        let todos: Vec<todo::Todo> = self
             .todos
             .clone()
             .into_iter()
@@ -155,7 +176,7 @@ impl Menu {
     }
 }
 
-fn is_displayed_todo(menu_kind: &MenuKind, todo: &todo::TodoBuilder) -> bool {
+fn is_displayed_todo(menu_kind: &MenuKind, todo: &todo::Todo) -> bool {
     matches!(
         (menu_kind, todo.is_done()),
         (MenuKind::Todo, false) | (MenuKind::Done, true) | (MenuKind::All, _)

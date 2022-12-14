@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Todobi {
-    pub todos: Vec<todo::TodoBuilder>,
+    pub todos: Vec<todo::Todo>,
 }
 
 impl Todobi {
@@ -23,7 +23,7 @@ impl Todobi {
             .create(true)
             .open(file_path)?;
         let reader = BufReader::new(todo_list);
-        let todos: Vec<todo::TodoBuilder> = match serde_json::from_reader(reader) {
+        let todos: Vec<todo::Todo> = match serde_json::from_reader(reader) {
             Ok(todos) => todos,
             Err(_) => Vec::new(),
         };
@@ -42,7 +42,7 @@ impl Todobi {
 
     pub fn add(&mut self, content: Option<String>, date: Option<String>) -> anyhow::Result<()> {
         let todo = input::input_todo(&console::Term::stdout(), content, date)?;
-        println!("Add:[ {} ]", todo.to_string());
+        println!("Add:[ {} ]", todo.format(None));
         self.todos.push(todo);
         self.todos.sort();
         Ok(())
@@ -57,7 +57,7 @@ impl Todobi {
     }
 
     pub fn clear(&mut self) {
-        let todos: Vec<todo::TodoBuilder> = self
+        let todos: Vec<todo::Todo> = self
             .todos
             .iter()
             .cloned()
@@ -67,9 +67,16 @@ impl Todobi {
     }
 
     pub fn show(&self) {
+        let mut max = 0;
+        for todo in &self.todos {
+            let len = todo.get_content_len();
+            if len > max {
+                max = len;
+            }
+        }
         for todo in self.todos.iter() {
             if !todo.is_done() {
-                println!("  {}", todo.to_string());
+                println!("  {}", todo.format(Some(max)));
             }
         }
     }
